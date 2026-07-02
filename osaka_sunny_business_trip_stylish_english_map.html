@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Osaka Sunny Business Trip Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --navy:#0f172a;
+  --blue:#2563eb;
+  --sky:#38bdf8;
+  --gold:#f59e0b;
+  --green:#34d399;
+  --slate:#64748b;
+  --panel:rgba(255,255,255,.94);
+  --line:rgba(255,255,255,.18);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;
+  color:white;
+  background:
+    radial-gradient(circle at 8% 8%,rgba(56,189,248,.24),transparent 30%),
+    radial-gradient(circle at 88% 10%,rgba(245,158,11,.18),transparent 32%),
+    radial-gradient(circle at 72% 92%,rgba(52,211,153,.16),transparent 28%),
+    linear-gradient(135deg,#07111f,#111827 52%,#0f172a);
+}
+.hero{
+  padding:24px 18px 16px;
+  border-bottom:1px solid var(--line);
+}
+.eyebrow{
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.64);
+  font-size:11px;
+  margin-bottom:8px;
+}
+h1{
+  margin:0;
+  font-size:clamp(26px,6vw,46px);
+  line-height:1.05;
+  font-weight:880;
+}
+.lead{
+  margin:10px 0 16px;
+  max-width:940px;
+  color:rgba(255,255,255,.78);
+  line-height:1.55;
+  font-size:14px;
+}
+.toolbar{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+button{
+  border:1px solid rgba(255,255,255,.28);
+  color:white;
+  background:rgba(255,255,255,.09);
+  padding:10px 13px;
+  border-radius:999px;
+  font-weight:800;
+  font-size:13px;
+  cursor:pointer;
+  backdrop-filter:blur(12px);
+}
+button.active{
+  background:white;
+  color:#111827;
+  border-color:white;
+}
+.layout{
+  display:grid;
+  grid-template-columns:minmax(0,1.45fr) minmax(330px,.75fr);
+  gap:14px;
+  padding:14px;
+}
+#map{
+  min-height:68vh;
+  height:calc(100vh - 205px);
+  border-radius:24px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  box-shadow:0 24px 70px rgba(0,0,0,.38);
+}
+.side{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  max-height:calc(100vh - 205px);
+  overflow:auto;
+  padding-right:2px;
+}
+.recommend{
+  background:linear-gradient(135deg,rgba(255,255,255,.18),rgba(255,255,255,.08));
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:16px;
+  backdrop-filter:blur(20px);
+}
+.recommend h2{
+  margin:0 0 6px;
+  font-size:17px;
+}
+.recommend .meta{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:9px 0 10px;
+}
+.pill{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.16);
+  padding:7px 9px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+}
+.recommend p{
+  margin:0;
+  color:rgba(255,255,255,.76);
+  font-size:13px;
+  line-height:1.55;
+}
+.route{
+  margin-top:10px;
+  display:grid;
+  gap:8px;
+}
+.route div{
+  background:rgba(255,255,255,.09);
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:14px;
+  padding:9px 10px;
+  font-size:13px;
+  line-height:1.45;
+}
+.cards{display:grid;gap:10px}
+.card{
+  background:var(--panel);
+  color:#111827;
+  border-radius:20px;
+  padding:14px;
+  box-shadow:0 12px 32px rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.2);
+}
+.topline{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-start;
+}
+.card h3{margin:0;font-size:16px}
+.tag{
+  flex:0 0 auto;
+  font-size:11px;
+  font-weight:850;
+  padding:5px 8px;
+  border-radius:999px;
+  color:white;
+  background:linear-gradient(135deg,#2563eb,#0f172a);
+}
+.desc{
+  margin:8px 0 10px;
+  color:#374151;
+  line-height:1.5;
+  font-size:13px;
+}
+.mini{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:10px;
+}
+.mini div{
+  background:#f3f4f6;
+  padding:8px;
+  border-radius:12px;
+  font-size:12px;
+  color:#374151;
+}
+.mini b{
+  display:block;
+  color:#111827;
+  margin-bottom:2px;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.tip{
+  font-size:12.5px;
+  line-height:1.5;
+  color:#4b5563;
+  border-left:3px solid #93c5fd;
+  padding-left:9px;
+  margin-bottom:10px;
+}
+.card a{
+  display:inline-flex;
+  text-decoration:none;
+  color:#111827;
+  background:#dbeafe;
+  padding:8px 10px;
+  border-radius:999px;
+  font-weight:850;
+  font-size:12px;
+}
+.leaflet-popup-content-wrapper{border-radius:18px}
+.popup-title{font-weight:850;font-size:15px}
+.popup-meta{color:#4b5563;line-height:1.5;margin-top:6px}
+.popup-link{display:inline-block;margin-top:8px;color:#2563eb;font-weight:750}
+@media(max-width:880px){
+  .layout{grid-template-columns:1fr;padding:10px}
+  #map{height:58vh;min-height:440px;border-radius:20px}
+  .side{max-height:none;overflow:visible}
+  .hero{padding:18px 14px 12px}
+}
+</style>
+</head>
+<body>
+<section class="hero">
+  <div class="eyebrow">Osaka Sunny Business Trip Map</div>
+  <h1>Short Osaka Routes<br>for Business Travelers</h1>
+  <p class="lead">A stylish English map for sunny-day business trip plans in Osaka. These routes are designed for international visitors who want light sightseeing, quick souvenirs, easy movement, and a compact reset after meetings.</p>
+  <div class="toolbar" id="toolbar">
+    <button class="active" data-plan="all">All Plans</button>
+    <button data-plan="plan1">Osaka Castle</button>
+    <button data-plan="plan2">Umeda View</button>
+    <button data-plan="plan3">Nakanoshima</button>
+    <button data-plan="plan4">Dotonbori</button>
+    <button data-plan="plan5">Shinsekai</button>
+  </div>
+</section>
+<main class="layout">
+  <div id="map"></div>
+  <aside class="side">
+    <section class="recommend">
+      <h2 id="recTitle">All Sunny Business Trip Plans</h2>
+      <div class="meta">
+        <span class="pill" id="recTime">5 plans</span>
+        <span class="pill" id="recBudget">Short, easy routes</span>
+      </div>
+      <p id="recText">Use the full map to compare business-friendly routes: Osaka Castle for history, Umeda for skyline and station souvenirs, Nakanoshima for a calm riverside reset, Dotonbori for iconic Osaka, and Shinsekai for a deeper local experience.</p>
+      <div class="route" id="routeBox"></div>
+    </section>
+    <section class="cards" id="cards"></section>
+  </aside>
+</main>
+<script>
+const plans = [{"id": "plan1", "title": "Sunny Business Trip Plan 1", "subtitle": "Osaka Castle, History & Light Walk", "total_time": "Approx. 2.5–3 hours", "total_budget": "Approx. ¥2,500–¥5,000", "mood": "Classic, historical, green, easy to explain", "how": "A safe and easy plan for business visitors who want a quick sense of Osaka’s history without going too far off schedule. It combines a light walk, a short museum-style visit, and a clean commercial area for coffee or souvenirs.", "spots": [{"name": "Osaka Castle Park", "lat": 34.687315, "lng": 135.526201, "vibe": "A classic green area where business travelers can feel Osaka’s history and nature inside the city.", "time": "Approx. 45–60 minutes", "budget": "Free", "tip": "Use it as a light walk after meetings. It is easy to explain as one of Osaka’s most iconic historical areas.", "google": "Osaka Castle Park"}, {"name": "Osaka Castle Tower", "lat": 34.6877892, "lng": 135.5272487, "vibe": "A tourism-style museum where visitors can understand Osaka’s history in a short time.", "time": "Approx. 60–90 minutes", "budget": "Approx. ¥1,200", "tip": "Good for visitors who want a compact historical explanation rather than a long museum visit.", "google": "Osaka Castle Tower"}, {"name": "JO-TERRACE OSAKA", "lat": 34.690313, "lng": 135.533376, "vibe": "A clean commercial area with cafés, light meals, and casual souvenir browsing near Osaka Castle.", "time": "Approx. 45 minutes", "budget": "Approx. ¥1,000–¥2,500", "tip": "Use this as the final stop for coffee, a light meal, or easy souvenir browsing.", "google": "JO-TERRACE OSAKA"}]}, {"id": "plan2", "title": "Sunny Business Trip Plan 2", "subtitle": "Umeda Sky Building, City View & Station Souvenirs", "total_time": "Approx. 2.5–3 hours", "total_budget": "Approx. ¥4,500–¥8,000", "mood": "Urban, polished, station-friendly, evening view", "how": "This plan works well after business meetings around Umeda or Osaka Station. It gives visitors a skyline view, a refined commercial area, and quick souvenir shopping without complicated movement.", "spots": [{"name": "Umeda Sky Building Floating Garden Observatory", "lat": 34.705301, "lng": 135.489626, "vibe": "An observatory where visitors can see Osaka’s cityscape from above, especially impressive from sunset to night.", "time": "Approx. 60–90 minutes", "budget": "Approx. ¥2,000", "tip": "Best in the evening. It gives business travelers a memorable view without needing a full sightseeing day.", "google": "Umeda Sky Building Floating Garden Observatory"}, {"name": "Grand Front Osaka", "lat": 34.705513, "lng": 135.495722, "vibe": "A refined commercial complex with restaurants, cafés, lifestyle shops, and an easy urban atmosphere.", "time": "Approx. 60 minutes", "budget": "Approx. ¥1,500–¥3,000", "tip": "Use this for dinner, a relaxed café stop, or stylish gift browsing near Osaka Station.", "google": "Grand Front Osaka"}, {"name": "Daimaru Umeda B1 Osaka Souvenir Floor", "lat": 34.701319, "lng": 135.496982, "vibe": "A convenient station-area food floor where visitors can quickly choose Osaka sweets, Japanese confectionery, and easy gifts.", "time": "Approx. 30–45 minutes", "budget": "Approx. ¥1,000–¥3,000", "tip": "Good for last-minute souvenirs before returning to the hotel or station.", "google": "Daimaru Umeda Osaka souvenirs B1"}]}, {"id": "plan3", "title": "Sunny Business Trip Plan 3", "subtitle": "Nakanoshima, Riverside Walk & Adult Osaka", "total_time": "Approx. 2.5 hours", "total_budget": "Approx. ¥2,000–¥5,000", "mood": "Calm, mature, riverside, business-district friendly", "how": "A quiet plan for visitors who prefer a refined, low-energy route. It works well in business attire and gives a different image of Osaka: water, architecture, cafés, and elegant small gifts.", "spots": [{"name": "Nakanoshima Park", "lat": 34.692176, "lng": 135.506343, "vibe": "A calm riverside area inside the business district, easy to walk through even in business attire.", "time": "Approx. 45 minutes", "budget": "Free", "tip": "A good reset walk after meetings. It feels calmer and more mature than major tourist areas.", "google": "Nakanoshima Park Osaka"}, {"name": "Osaka City Central Public Hall", "lat": 34.693737, "lng": 135.504742, "vibe": "A photogenic retro building that introduces Osaka’s modern architectural history in an easy-to-understand way.", "time": "Approx. 20–30 minutes", "budget": "Free or paid areas depending on visit", "tip": "Best for a quick exterior photo and a short explanation of modern Osaka.", "google": "Osaka City Central Public Hall"}, {"name": "Kitahama Riverside Cafés", "lat": 34.691211, "lng": 135.506184, "vibe": "A quiet riverside café area suitable for resetting after work or having a relaxed conversation.", "time": "Approx. 60 minutes", "budget": "Approx. ¥1,000–¥2,000", "tip": "Choose a riverside seat if possible. This makes the plan feel calm and premium.", "google": "Kitahama Riverside Osaka cafe"}, {"name": "Yodoyabashi / Kitahama Gift Area", "lat": 34.6916, "lng": 135.5027, "vibe": "An elegant business-district area where it is easy to find refined baked sweets or Japanese confectionery.", "time": "Approx. 30 minutes", "budget": "Approx. ¥1,000–¥3,000", "tip": "Good for tasteful small gifts that feel more premium than typical tourist souvenirs.", "google": "Yodoyabashi Kitahama Osaka sweets gifts"}]}, {"id": "plan4", "title": "Sunny Business Trip Plan 4", "subtitle": "Dotonbori, Osaka Energy & Light Street Food", "total_time": "Approx. 3 hours", "total_budget": "Approx. ¥3,000–¥7,000", "mood": "Iconic, lively, Osaka-like, quick food experience", "how": "This is the best plan when visitors want the most recognizable Osaka atmosphere in a short time. It combines signs, riverside energy, Japanese alley charm, light local food, and easy souvenir shopping.", "spots": [{"name": "Dotonbori & Ebisu Bridge", "lat": 34.668723, "lng": 135.501295, "vibe": "A lively area where visitors can instantly feel Osaka through the Glico sign, giant food signs, and riverside crowds.", "time": "Approx. 45–60 minutes", "budget": "Free", "tip": "Best for a quick, high-impact Osaka introduction. Good for photos and first-time visitors.", "google": "Dotonbori Ebisu Bridge Osaka"}, {"name": "Hozenji Yokocho", "lat": 34.667012, "lng": 135.502574, "vibe": "A quieter Japanese-style alley near Dotonbori with stone-paved paths and a more traditional atmosphere.", "time": "Approx. 30 minutes", "budget": "Free", "tip": "Use it as a contrast to Dotonbori’s noise. It gives visitors a calmer, more Japanese impression.", "google": "Hozenji Yokocho Osaka"}, {"name": "Takoyaki & Kushikatsu Light Meal", "lat": 34.66878, "lng": 135.5022, "vibe": "A quick way to experience Osaka food such as takoyaki and kushikatsu without planning a long dinner.", "time": "Approx. 45–60 minutes", "budget": "Approx. ¥1,500–¥3,000", "tip": "Keep the meal light if visitors have another dinner or early schedule the next day.", "google": "Dotonbori takoyaki kushikatsu Osaka"}, {"name": "Namba / Shinsaibashi Souvenir Shopping", "lat": 34.671669, "lng": 135.501037, "vibe": "A convenient shopping area for sweets, character goods, drugstore items, and easy Osaka souvenirs.", "time": "Approx. 45 minutes", "budget": "Approx. ¥1,000–¥4,000", "tip": "Good for quick souvenir shopping after experiencing Dotonbori.", "google": "Shinsaibashi Namba Osaka souvenirs"}]}, {"id": "plan5", "title": "Sunny Business Trip Plan 5", "subtitle": "Shinsekai, Tsutenkaku & Deep Osaka", "total_time": "Approx. 4–5 hours", "total_budget": "Approx. ¥5,000–¥9,000", "mood": "Retro, local, memorable, casual recovery", "how": "A deeper Osaka route for visitors who want something more local and memorable. It combines retro streets, the Tsutenkaku landmark, casual kushikatsu, and a relaxing spa finish.", "spots": [{"name": "Shinsekai Area", "lat": 34.652546, "lng": 135.506315, "vibe": "A retro and local Osaka area with strong visual impact, old-town energy, and colorful signs.", "time": "Approx. 45 minutes", "budget": "Free", "tip": "A short walk is enough to make a strong impression. It feels more local than polished commercial areas.", "google": "Shinsekai Osaka"}, {"name": "Tsutenkaku Area", "lat": 34.652499, "lng": 135.506302, "vibe": "A representative Osaka landmark surrounded by retro streets, kushikatsu shops, and old Osaka atmosphere.", "time": "Approx. 45–60 minutes", "budget": "Free–Approx. ¥1,200", "tip": "Use it as the main photo and landmark point of the route.", "google": "Tsutenkaku Osaka"}, {"name": "Kushikatsu Light Meal", "lat": 34.6528, "lng": 135.50615, "vibe": "A casual Osaka local food experience that is easy to explain to international visitors.", "time": "Approx. 60 minutes", "budget": "Approx. ¥2,000–¥4,000", "tip": "Good for visitors who want a local food experience without a formal restaurant setting.", "google": "Shinsekai kushikatsu Osaka"}, {"name": "Spa World", "lat": 34.649213, "lng": 135.505876, "vibe": "A large spa facility near Shinsekai where visitors can recover after sightseeing or business travel.", "time": "Approx. 90–120 minutes", "budget": "Approx. ¥2,000–¥2,700", "tip": "Best as the final stop if visitors want to relax their body after work or travel.", "google": "Spa World Osaka"}]}];
+const allSpots = [{"name": "Osaka Castle Park", "lat": 34.687315, "lng": 135.526201, "vibe": "A classic green area where business travelers can feel Osaka’s history and nature inside the city.", "time": "Approx. 45–60 minutes", "budget": "Free", "tip": "Use it as a light walk after meetings. It is easy to explain as one of Osaka’s most iconic historical areas.", "google": "Osaka Castle Park", "plans": ["plan1"]}, {"name": "Osaka Castle Tower", "lat": 34.6877892, "lng": 135.5272487, "vibe": "A tourism-style museum where visitors can understand Osaka’s history in a short time.", "time": "Approx. 60–90 minutes", "budget": "Approx. ¥1,200", "tip": "Good for visitors who want a compact historical explanation rather than a long museum visit.", "google": "Osaka Castle Tower", "plans": ["plan1"]}, {"name": "JO-TERRACE OSAKA", "lat": 34.690313, "lng": 135.533376, "vibe": "A clean commercial area with cafés, light meals, and casual souvenir browsing near Osaka Castle.", "time": "Approx. 45 minutes", "budget": "Approx. ¥1,000–¥2,500", "tip": "Use this as the final stop for coffee, a light meal, or easy souvenir browsing.", "google": "JO-TERRACE OSAKA", "plans": ["plan1"]}, {"name": "Umeda Sky Building Floating Garden Observatory", "lat": 34.705301, "lng": 135.489626, "vibe": "An observatory where visitors can see Osaka’s cityscape from above, especially impressive from sunset to night.", "time": "Approx. 60–90 minutes", "budget": "Approx. ¥2,000", "tip": "Best in the evening. It gives business travelers a memorable view without needing a full sightseeing day.", "google": "Umeda Sky Building Floating Garden Observatory", "plans": ["plan2"]}, {"name": "Grand Front Osaka", "lat": 34.705513, "lng": 135.495722, "vibe": "A refined commercial complex with restaurants, cafés, lifestyle shops, and an easy urban atmosphere.", "time": "Approx. 60 minutes", "budget": "Approx. ¥1,500–¥3,000", "tip": "Use this for dinner, a relaxed café stop, or stylish gift browsing near Osaka Station.", "google": "Grand Front Osaka", "plans": ["plan2"]}, {"name": "Daimaru Umeda B1 Osaka Souvenir Floor", "lat": 34.701319, "lng": 135.496982, "vibe": "A convenient station-area food floor where visitors can quickly choose Osaka sweets, Japanese confectionery, and easy gifts.", "time": "Approx. 30–45 minutes", "budget": "Approx. ¥1,000–¥3,000", "tip": "Good for last-minute souvenirs before returning to the hotel or station.", "google": "Daimaru Umeda Osaka souvenirs B1", "plans": ["plan2"]}, {"name": "Nakanoshima Park", "lat": 34.692176, "lng": 135.506343, "vibe": "A calm riverside area inside the business district, easy to walk through even in business attire.", "time": "Approx. 45 minutes", "budget": "Free", "tip": "A good reset walk after meetings. It feels calmer and more mature than major tourist areas.", "google": "Nakanoshima Park Osaka", "plans": ["plan3"]}, {"name": "Osaka City Central Public Hall", "lat": 34.693737, "lng": 135.504742, "vibe": "A photogenic retro building that introduces Osaka’s modern architectural history in an easy-to-understand way.", "time": "Approx. 20–30 minutes", "budget": "Free or paid areas depending on visit", "tip": "Best for a quick exterior photo and a short explanation of modern Osaka.", "google": "Osaka City Central Public Hall", "plans": ["plan3"]}, {"name": "Kitahama Riverside Cafés", "lat": 34.691211, "lng": 135.506184, "vibe": "A quiet riverside café area suitable for resetting after work or having a relaxed conversation.", "time": "Approx. 60 minutes", "budget": "Approx. ¥1,000–¥2,000", "tip": "Choose a riverside seat if possible. This makes the plan feel calm and premium.", "google": "Kitahama Riverside Osaka cafe", "plans": ["plan3"]}, {"name": "Yodoyabashi / Kitahama Gift Area", "lat": 34.6916, "lng": 135.5027, "vibe": "An elegant business-district area where it is easy to find refined baked sweets or Japanese confectionery.", "time": "Approx. 30 minutes", "budget": "Approx. ¥1,000–¥3,000", "tip": "Good for tasteful small gifts that feel more premium than typical tourist souvenirs.", "google": "Yodoyabashi Kitahama Osaka sweets gifts", "plans": ["plan3"]}, {"name": "Dotonbori & Ebisu Bridge", "lat": 34.668723, "lng": 135.501295, "vibe": "A lively area where visitors can instantly feel Osaka through the Glico sign, giant food signs, and riverside crowds.", "time": "Approx. 45–60 minutes", "budget": "Free", "tip": "Best for a quick, high-impact Osaka introduction. Good for photos and first-time visitors.", "google": "Dotonbori Ebisu Bridge Osaka", "plans": ["plan4"]}, {"name": "Hozenji Yokocho", "lat": 34.667012, "lng": 135.502574, "vibe": "A quieter Japanese-style alley near Dotonbori with stone-paved paths and a more traditional atmosphere.", "time": "Approx. 30 minutes", "budget": "Free", "tip": "Use it as a contrast to Dotonbori’s noise. It gives visitors a calmer, more Japanese impression.", "google": "Hozenji Yokocho Osaka", "plans": ["plan4"]}, {"name": "Takoyaki & Kushikatsu Light Meal", "lat": 34.66878, "lng": 135.5022, "vibe": "A quick way to experience Osaka food such as takoyaki and kushikatsu without planning a long dinner.", "time": "Approx. 45–60 minutes", "budget": "Approx. ¥1,500–¥3,000", "tip": "Keep the meal light if visitors have another dinner or early schedule the next day.", "google": "Dotonbori takoyaki kushikatsu Osaka", "plans": ["plan4"]}, {"name": "Namba / Shinsaibashi Souvenir Shopping", "lat": 34.671669, "lng": 135.501037, "vibe": "A convenient shopping area for sweets, character goods, drugstore items, and easy Osaka souvenirs.", "time": "Approx. 45 minutes", "budget": "Approx. ¥1,000–¥4,000", "tip": "Good for quick souvenir shopping after experiencing Dotonbori.", "google": "Shinsaibashi Namba Osaka souvenirs", "plans": ["plan4"]}, {"name": "Shinsekai Area", "lat": 34.652546, "lng": 135.506315, "vibe": "A retro and local Osaka area with strong visual impact, old-town energy, and colorful signs.", "time": "Approx. 45 minutes", "budget": "Free", "tip": "A short walk is enough to make a strong impression. It feels more local than polished commercial areas.", "google": "Shinsekai Osaka", "plans": ["plan5"]}, {"name": "Tsutenkaku Area", "lat": 34.652499, "lng": 135.506302, "vibe": "A representative Osaka landmark surrounded by retro streets, kushikatsu shops, and old Osaka atmosphere.", "time": "Approx. 45–60 minutes", "budget": "Free–Approx. ¥1,200", "tip": "Use it as the main photo and landmark point of the route.", "google": "Tsutenkaku Osaka", "plans": ["plan5"]}, {"name": "Kushikatsu Light Meal", "lat": 34.6528, "lng": 135.50615, "vibe": "A casual Osaka local food experience that is easy to explain to international visitors.", "time": "Approx. 60 minutes", "budget": "Approx. ¥2,000–¥4,000", "tip": "Good for visitors who want a local food experience without a formal restaurant setting.", "google": "Shinsekai kushikatsu Osaka", "plans": ["plan5"]}, {"name": "Spa World", "lat": 34.649213, "lng": 135.505876, "vibe": "A large spa facility near Shinsekai where visitors can recover after sightseeing or business travel.", "time": "Approx. 90–120 minutes", "budget": "Approx. ¥2,000–¥2,700", "tip": "Best as the final stop if visitors want to relax their body after work or travel.", "google": "Spa World Osaka", "plans": ["plan5"]}];
+let currentPlan = "all";
+let markers = [];
+const colors = {
+  plan1:"#34d399",
+  plan2:"#38bdf8",
+  plan3:"#60a5fa",
+  plan4:"#f59e0b",
+  plan5:"#a78bfa",
+  all:"#ffffff"
+};
+const map = L.map('map', {scrollWheelZoom:true});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom:19,
+  attribution:'&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+function selectedPlanObj() {
+  return plans.find(p => p.id === currentPlan);
+}
+function visibleSpots() {
+  if (currentPlan === "all") return allSpots;
+  const p = selectedPlanObj();
+  return p ? p.spots.map(s => { return {...s, plans:[p.id]} }) : allSpots;
+}
+function colorFor(s) {
+  if (currentPlan !== "all") return colors[currentPlan];
+  return colors[s.plans?.[0]] || "#2563eb";
+}
+function iconFor(s, index) {
+  const color = colorFor(s);
+  return L.divIcon({
+    className:'',
+    html:`<div style="
+      width:28px;height:28px;border-radius:50%;
+      background:${color};
+      color:#111827;
+      border:3px solid white;
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:900;
+      box-shadow:0 4px 16px rgba(0,0,0,.45);
+    ">${index+1}</div>`,
+    iconSize:[28,28],
+    iconAnchor:[14,14]
+  });
+}
+function renderMap() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  const bounds = [];
+  visibleSpots().forEach((s, i) => {
+    bounds.push([s.lat, s.lng]);
+    const google = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.google)}`;
+    const marker = L.marker([s.lat, s.lng], {icon: iconFor(s, i)})
+      .addTo(map)
+      .bindPopup(`
+        <div class="popup-title">${s.name}</div>
+        <div class="popup-meta">
+          ${s.vibe}<br><br>
+          Time: ${s.time}<br>
+          Budget: ${s.budget}<br>
+          <span style="display:block;margin-top:6px;"><b>Business trip tip:</b> ${s.tip}</span>
+        </div>
+        <a class="popup-link" href="${google}" target="_blank">Open in Google Maps</a>
+      `);
+    markers.push(marker);
+  });
+  if (bounds.length) map.fitBounds(bounds, {padding:[36,36]});
+}
+function renderCards() {
+  const cards = document.getElementById("cards");
+  cards.innerHTML = "";
+  visibleSpots().forEach((s, i) => {
+    const google = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.google)}`;
+    const card = document.createElement("article");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="topline">
+        <h3>${i+1}. ${s.name}</h3>
+        <span class="tag">Business Friendly</span>
+      </div>
+      <p class="desc">${s.vibe}</p>
+      <div class="mini">
+        <div><b>Time</b>${s.time}</div>
+        <div><b>Budget</b>${s.budget}</div>
+      </div>
+      <div class="tip"><b>How to enjoy:</b> ${s.tip}</div>
+      <a href="${google}" target="_blank">Open in Google Maps</a>
+    `;
+    cards.appendChild(card);
+  });
+}
+function renderRecommendation() {
+  const title = document.getElementById("recTitle");
+  const time = document.getElementById("recTime");
+  const budget = document.getElementById("recBudget");
+  const text = document.getElementById("recText");
+  const routeBox = document.getElementById("routeBox");
+  routeBox.innerHTML = "";
+
+  if (currentPlan === "all") {
+    title.textContent = "All Sunny Business Trip Plans";
+    time.textContent = "5 plans";
+    budget.textContent = "Short, easy routes";
+    text.textContent = "Use the full map to compare business-friendly routes: Osaka Castle for history, Umeda for skyline and station souvenirs, Nakanoshima for a calm riverside reset, Dotonbori for iconic Osaka, and Shinsekai for a deeper local experience.";
+    plans.forEach(p => {
+      const div = document.createElement("div");
+      div.textContent = `${p.title}: ${p.subtitle} / ${p.total_time} / ${p.total_budget}`;
+      routeBox.appendChild(div);
+    });
+  } else {
+    const p = selectedPlanObj();
+    title.textContent = `${p.title}: ${p.subtitle}`;
+    time.textContent = p.total_time;
+    budget.textContent = p.total_budget;
+    text.textContent = `${p.mood}. ${p.how}`;
+    p.spots.forEach((s, i) => {
+      const div = document.createElement("div");
+      div.textContent = `${i+1}. ${s.name} → ${s.time} / ${s.budget}`;
+      routeBox.appendChild(div);
+    });
+  }
+}
+function renderAll() {
+  renderMap();
+  renderCards();
+  renderRecommendation();
+}
+document.querySelectorAll("button[data-plan]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("button[data-plan]").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentPlan = btn.dataset.plan;
+    renderAll();
+  });
+});
+renderAll();
+</script>
+</body>
+</html>
